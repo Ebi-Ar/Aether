@@ -3,7 +3,7 @@
 A cinematic landing page builder — a visual editor for building pages where
 motion is part of the layout rather than something added afterwards.
 
-**Live:** https://scroll-kit-new.vercel.app
+**Live:** https://itsaether.vercel.app
 
 > Actively in development. The landing page, editor and component library are
 > working; the examples gallery is in progress.
