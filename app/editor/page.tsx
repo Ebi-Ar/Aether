@@ -2191,7 +2191,7 @@ export const SITE_DATA: {
         if (dragType === 'element') {
             const touchedIds = new Set<string>();
             const activeId = String(active.id);
-            const isValidGuideElementId = (id?: string) =>
+            const isValidGuideElementId = (id?: string): id is string =>
                 !!id && id !== activeId && id !== 'canvas' && id !== 'grid' && id !== 'equal-gap' && !id.endsWith('-bg');
 
             const directContactIds = computeContactElementIds(activeId, {
