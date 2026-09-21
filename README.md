@@ -5,8 +5,8 @@ motion is part of the layout rather than something added afterwards.
 
 **Live:** https://itsaether.vercel.app
 
-> Actively in development. The landing page, editor and component library are
-> working; the examples gallery is in progress.
+> Actively in development. The landing page, editor, template gallery and
+> component library are live.
 
 ## What it does
 
