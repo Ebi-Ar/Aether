@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aether
 
-## Getting Started
+A cinematic landing page builder — a visual editor for building pages where
+motion is part of the layout rather than something added afterwards.
 
-First, run the development server:
+**Live:** https://scroll-kit-new.vercel.app
 
-```bash
+> Actively in development. The landing page, editor and component library are
+> working; the examples gallery is in progress.
+
+## What it does
+
+Pages are assembled in the browser: a layers tree on the left, a live canvas in
+the middle, and per-element properties and behaviours on the right. Sections are
+reordered by drag and drop, previewed at desktop or mobile widths, and published
+from the editor.
+
+Motion is driven by a set of physics primitives — gravity, friction and inertia —
+built on GSAP, with Three.js and WebGL handling the scene work (lens flares,
+lighting, depth). The goal is that an animation is configured as a property of an
+element, not written by hand for every page.
+
+## Routes
+
+| Route | |
+|---|---|
+| `/` | Landing page |
+| `/editor` | The page builder |
+| `/view` | Renders a built page on its own |
+| `/examples` | Gallery of example pages |
+| `/legacy-library` | Earlier component library |
+| `/demos/lookbook`, `/demos/lens-flare` | Individual motion demos |
+
+## Stack
+
+Next.js 16 · React 19 · TypeScript · GSAP · Three.js · Tailwind CSS 4 ·
+Radix UI · dnd-kit · TanStack Query
+
+## Running locally
+
+```
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Then open http://localhost:3000. Use `npm run dev:lan` to expose the dev server
+on your network for testing on a phone.
