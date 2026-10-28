@@ -870,10 +870,13 @@ function SliderControl({ value, onChange, min = 0, max = 100, step = 1 }: { valu
 
 function QuickInput({ label, value, onChange, placeholder, live = false }: { label?: string, value: string, onChange?: (val: string) => void, placeholder?: string, live?: boolean }) {
     const [draft, setDraft] = React.useState(value);
+    const [syncedValue, setSyncedValue] = React.useState(value);
 
-    React.useEffect(() => {
+    // Reset the draft when the value changes from outside (e.g. another element selected).
+    if (value !== syncedValue) {
+        setSyncedValue(value);
         setDraft(value);
-    }, [value]);
+    }
 
     const commit = (next: string) => {
         onChange?.(next);

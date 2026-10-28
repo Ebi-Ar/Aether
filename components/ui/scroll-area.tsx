@@ -5,16 +5,15 @@ import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "@/lib/utils"
 
+const subscribeToNothing = () => () => {}
+
 function ScrollArea({
   className,
   children,
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
-  const [mounted, setMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
+  // false on the server and during hydration, true once running in the browser
+  const mounted = React.useSyncExternalStore(subscribeToNothing, () => true, () => false)
 
   if (!mounted) {
     return (
