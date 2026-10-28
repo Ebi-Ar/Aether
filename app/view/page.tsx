@@ -1,47 +1,35 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Canvas } from "@/components/editor/canvas";
-import { EditorElement } from '@/lib/editor/store';
+import { computeCanvasHeight, EditorDocument, parseEditorDocument } from '@/lib/editor/document';
 import LZString from 'lz-string';
+
+function decodeShareData(data: string): EditorDocument | null {
+    try {
+        // Decode: LZString -> JSON String -> validated document
+        const jsonString = LZString.decompressFromEncodedURIComponent(data);
+        if (!jsonString) return null;
+        return parseEditorDocument(JSON.parse(jsonString));
+    } catch (e) {
+        console.error("Failed to parse shared data", e);
+        return null;
+    }
+}
 
 // Separate component to use useSearchParams
 function ViewCanvas() {
     const searchParams = useSearchParams();
     const data = searchParams.get('data');
+    const doc = useMemo(() => (data ? decodeShareData(data) : null), [data]);
 
-    const [elements, setElements] = useState<EditorElement[]>([]);
-    const [canvasHeight, setCanvasHeight] = useState(800);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (data) {
-            try {
-                // Decode: LZString -> JSON String -> Object
-                const jsonString = LZString.decompressFromEncodedURIComponent(data);
-                if (!jsonString) throw new Error("Decompression failed");
-                const state = JSON.parse(jsonString);
-
-                if (state.elements) {
-                    setElements(state.elements);
-                }
-                if (state.canvasHeight) {
-                    setCanvasHeight(state.canvasHeight);
-                }
-            } catch (e) {
-                console.error("Failed to parse shared data", e);
-                setError("Invalid share link.");
-            }
-        }
-    }, [data]);
-
-    if (error) {
+    if (!doc) {
         return (
             <div className="w-full h-screen flex items-center justify-center bg-[#121212] text-white">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold mb-2">Oops!</h1>
-                    <p className="text-gray-400">{error}</p>
+                    <p className="text-gray-400">{data ? 'Invalid share link.' : 'This link has no page to show.'}</p>
                 </div>
             </div>
         );
@@ -50,8 +38,8 @@ function ViewCanvas() {
     return (
         <div className="w-full h-screen bg-[#121212] overflow-hidden">
             <Canvas
-                elements={elements}
-                height={canvasHeight}
+                elements={doc.elements}
+                height={computeCanvasHeight(doc.elements)}
                 readOnly={true} // Important: Disable interactions
             />
         </div>

@@ -3,7 +3,7 @@ export type BehaviorType = 'hydrodynamic' | 'physics-card' | 'apple-zoom';
 export interface BehaviorConfig {
     id: string;
     type: BehaviorType;
-    config?: Record<string, any>;
+    config?: Record<string, unknown>;
 }
 
 export interface EditorElement {
@@ -15,8 +15,6 @@ export interface EditorElement {
     behaviors: BehaviorConfig[];
     isLocked?: boolean;
 }
-
-import { createDefaultElement } from './defaults';
 
 // Initial state with pre-populated sections
 export const initialElements: EditorElement[] = [

@@ -2,7 +2,7 @@
 import { EditorElement } from './store';
 
 export const createDefaultElement = (subtype: string, id: string, dropX: number = 0, dropY: number = 0): EditorElement[] => {
-    let newElements: EditorElement[] = [];
+    const newElements: EditorElement[] = [];
 
     if (subtype === 'navbar') {
         // Container
@@ -153,6 +153,7 @@ export const createDefaultElement = (subtype: string, id: string, dropX: number 
                 height: 'auto',
                 fontSize: '60px',
                 fontWeight: '800',
+                lineHeight: '1.1', // Two lines must end above the subtext at +340px
                 textAlign: 'center',
                 color: '#111827',
                 letterSpacing: '-0.025em',
@@ -260,6 +261,7 @@ export const createDefaultElement = (subtype: string, id: string, dropX: number 
                 height: 'auto',
                 fontSize: '36px',
                 fontWeight: '800',
+                lineHeight: '1.2', // Must end above the subtext
                 textAlign: 'center',
                 color: '#111827',
                 letterSpacing: '-0.025em',

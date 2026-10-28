@@ -157,14 +157,14 @@ export function LeftSidebar({
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" className="w-[180px]">
-                                <DropdownMenuItem onClick={onAddPage}>
+                                <DropdownMenuItem onClick={onAddPage} data-coming-soon title="Separate pages: coming soon. For now this adds a divider below the current page.">
                                     New Page
                                 </DropdownMenuItem>
                                 <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger>New CMS Page</DropdownMenuSubTrigger>
+                                    <DropdownMenuSubTrigger data-coming-soon title="CMS pages: coming soon">New CMS Page</DropdownMenuSubTrigger>
                                     <DropdownMenuSubContent>
-                                        <DropdownMenuItem disabled>Blog Post</DropdownMenuItem>
-                                        <DropdownMenuItem disabled>Case Study</DropdownMenuItem>
+                                        <DropdownMenuItem disabled data-coming-soon>Blog Post</DropdownMenuItem>
+                                        <DropdownMenuItem disabled data-coming-soon>Case Study</DropdownMenuItem>
                                     </DropdownMenuSubContent>
                                 </DropdownMenuSub>
                                 <DropdownMenuSeparator />
@@ -254,7 +254,7 @@ export function LeftSidebar({
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="flex flex-col gap-2 pb-3">
-                                <div className="text-[10px] text-muted-foreground px-2 italic">Dragging page behaviors coming soon...</div>
+                                <div className="text-[10px] text-muted-foreground px-2 italic" data-coming-soon>Dragging page behaviors coming soon...</div>
                             </AccordionContent>
                         </AccordionItem>
 
@@ -286,9 +286,9 @@ function LayerItem({ label, active, isExpanded, type = 'frame', onClick, icon }:
                 </span>
                 <span>{label}</span>
             </div>
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                <Lock className="w-3 h-3 text-muted-foreground/50 hover:text-foreground" />
-                <Eye className="w-3 h-3 text-muted-foreground/50 hover:text-foreground" />
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100" data-coming-soon title="Lock and hide layers: coming soon">
+                <Lock className="w-3 h-3" />
+                <Eye className="w-3 h-3" />
             </div>
         </div>
     )

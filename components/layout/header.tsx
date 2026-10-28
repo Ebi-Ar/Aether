@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 
@@ -35,8 +34,8 @@ export function Header() {
     return () => scrollContainer.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // Hide header completely on view page
-  if (pathname?.startsWith('/view')) return null;
+  // Hide header completely on the view page, and in the editor, which has its own top bar
+  if (pathname?.startsWith('/view') || pathname?.startsWith('/editor')) return null;
 
   return (
     <header
@@ -47,7 +46,7 @@ export function Header() {
           <span className="text-lg tracking-tight">AETHER</span>
         </Link>
         <nav className="flex items-center gap-6">
-          <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" data-coming-soon title="Docs: coming soon">
             Docs
           </Link>
           <Link href="/examples" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -62,6 +61,8 @@ export function Header() {
           <Button
             size="sm"
             className="h-8 gap-2 px-4 text-xs font-semibold bg-transparent border border-white/20 text-white hover:bg-white/5 hover:border-white/50 hover:shadow-[0_0_15px_rgba(138,180,248,0.3)] transition-all duration-300 backdrop-blur-sm"
+            data-coming-soon
+            title="Pro plans: coming soon"
           >
             Get Pro
           </Button>

@@ -752,10 +752,10 @@ export function RightSidebar({ element, elements = [], onUpdate, onUpdateBehavio
                                                     <div>
                                                         <div className="flex items-center justify-between text-xs mb-1.5">
                                                             <span className="text-muted-foreground text-[10px]">Viscosity</span>
-                                                            <span className="font-mono text-[10px]">{config.viscosity ?? 0.3}</span>
+                                                            <span className="font-mono text-[10px]">{numberSetting(config.viscosity, 0.3)}</span>
                                                         </div>
                                                         <SliderControl
-                                                            value={config.viscosity ?? 0.3}
+                                                            value={numberSetting(config.viscosity, 0.3)}
                                                             onChange={(val) => onUpdateBehavior?.(behavior.id, { viscosity: val })}
                                                             min={0.1} max={1} step={0.1}
                                                         />
@@ -763,10 +763,10 @@ export function RightSidebar({ element, elements = [], onUpdate, onUpdateBehavio
                                                     <div>
                                                         <div className="flex items-center justify-between text-xs mb-1.5">
                                                             <span className="text-muted-foreground text-[10px]">Elasticity</span>
-                                                            <span className="font-mono text-[10px]">{config.elasticity ?? 0.2}</span>
+                                                            <span className="font-mono text-[10px]">{numberSetting(config.elasticity, 0.2)}</span>
                                                         </div>
                                                         <SliderControl
-                                                            value={config.elasticity ?? 0.2}
+                                                            value={numberSetting(config.elasticity, 0.2)}
                                                             onChange={(val) => onUpdateBehavior?.(behavior.id, { elasticity: val })}
                                                             min={0} max={1} step={0.1}
                                                         />
@@ -774,10 +774,10 @@ export function RightSidebar({ element, elements = [], onUpdate, onUpdateBehavio
                                                     <div>
                                                         <div className="flex items-center justify-between text-xs mb-1.5">
                                                             <span className="text-muted-foreground text-[10px]">Radius</span>
-                                                            <span className="font-mono text-[10px]">{config.interactionRadius ?? 150}</span>
+                                                            <span className="font-mono text-[10px]">{numberSetting(config.interactionRadius, 150)}</span>
                                                         </div>
                                                         <SliderControl
-                                                            value={config.interactionRadius ?? 150}
+                                                            value={numberSetting(config.interactionRadius, 150)}
                                                             onChange={(val) => onUpdateBehavior?.(behavior.id, { interactionRadius: val })}
                                                             min={50} max={500} step={10}
                                                         />
@@ -790,10 +790,10 @@ export function RightSidebar({ element, elements = [], onUpdate, onUpdateBehavio
                                                     <div>
                                                         <div className="flex items-center justify-between text-xs mb-1.5">
                                                             <span className="text-muted-foreground text-[10px]">Force</span>
-                                                            <span className="font-mono text-[10px]">{config.hoverForce ?? 10}</span>
+                                                            <span className="font-mono text-[10px]">{numberSetting(config.hoverForce, 10)}</span>
                                                         </div>
                                                         <SliderControl
-                                                            value={config.hoverForce ?? 10}
+                                                            value={numberSetting(config.hoverForce, 10)}
                                                             onChange={(val) => onUpdateBehavior?.(behavior.id, { hoverForce: val })}
                                                             min={1} max={50} step={1}
                                                         />
@@ -801,10 +801,10 @@ export function RightSidebar({ element, elements = [], onUpdate, onUpdateBehavio
                                                     <div>
                                                         <div className="flex items-center justify-between text-xs mb-1.5">
                                                             <span className="text-muted-foreground text-[10px]">Max Rotation</span>
-                                                            <span className="font-mono text-[10px]">{config.maxRotation ?? 5}deg</span>
+                                                            <span className="font-mono text-[10px]">{numberSetting(config.maxRotation, 5)}deg</span>
                                                         </div>
                                                         <SliderControl
-                                                            value={config.maxRotation ?? 5}
+                                                            value={numberSetting(config.maxRotation, 5)}
                                                             onChange={(val) => onUpdateBehavior?.(behavior.id, { maxRotation: val })}
                                                             min={1} max={45} step={1}
                                                         />
@@ -839,6 +839,11 @@ export function RightSidebar({ element, elements = [], onUpdate, onUpdateBehavio
             </ScrollArea>
         </div>
     );
+}
+
+// Behavior settings are stored untyped; fall back to the default for anything that isn't a number.
+function numberSetting(value: unknown, fallback: number) {
+    return typeof value === 'number' ? value : fallback;
 }
 
 function PropertySection({ title, children }: { title: string, children: React.ReactNode }) {

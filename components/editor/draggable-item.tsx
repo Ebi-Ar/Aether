@@ -6,7 +6,7 @@ interface DraggableItemProps {
     id: string;
     label: string;
     type: 'behavior' | 'content';
-    data?: any;
+    data?: Record<string, unknown>;
     icon?: React.ReactNode;
     onClick?: () => void;
     onQuickAdd?: () => void;

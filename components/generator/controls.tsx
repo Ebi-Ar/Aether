@@ -60,7 +60,7 @@ export function Controls({
         setOpenCardId(openCardId === id ? null : id);
     };
 
-    const updateHorizontalConfig = (field: keyof HorizontalConfig, value: any) => {
+    const updateHorizontalConfig = <K extends keyof HorizontalConfig>(field: K, value: HorizontalConfig[K]) => {
         if (!onHorizontalConfigChange || !horizontalConfig) return;
         onHorizontalConfigChange({ ...horizontalConfig, [field]: value });
     };

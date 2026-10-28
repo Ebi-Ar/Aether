@@ -1,4 +1,6 @@
 import React from 'react';
+import Link from 'next/link';
+import { Monitor } from 'lucide-react';
 
 interface EditorLayoutProps {
     children: React.ReactNode;
@@ -16,6 +18,18 @@ export function EditorLayout({
 }: EditorLayoutProps) {
     return (
         <div className="flex flex-col h-screen w-screen bg-background text-foreground overflow-hidden">
+            {/* The two sidebars leave no room for the canvas below 1024px wide */}
+            <div className="fixed inset-0 z-[200] flex lg:hidden flex-col items-center justify-center gap-4 bg-background px-8 text-center">
+                <Monitor className="w-8 h-8 text-muted-foreground" />
+                <h1 className="text-lg font-semibold">The editor needs a bigger screen</h1>
+                <p className="max-w-xs text-sm text-muted-foreground">
+                    Open Aether on a laptop or desktop, at least 1024px wide, to build pages.
+                </p>
+                <Link href="/" className="text-sm font-medium underline underline-offset-4">
+                    Back to home
+                </Link>
+            </div>
+
             {/* Top Bar Area */}
             <div className="flex-none h-12 border-b border-border z-50">
                 {topBar}

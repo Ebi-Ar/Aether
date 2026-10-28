@@ -1,4 +1,4 @@
-import { PhysicsConfig, HorizontalConfig, HydrodynamicConfig } from "@/components/generator/types"
+import { GridItem, PhysicsConfig, HorizontalConfig, HydrodynamicConfig } from "@/components/generator/types"
 
 export const ANIMATION_TEMPLATES = {
   'physics-card': `import { useEffect, useRef } from 'react'
@@ -720,7 +720,7 @@ export function generateReactGsapCode(
   headline: string,
   imageUrl: string,
   textAlwaysVisible: boolean = false,
-  gridItems?: any[],
+  gridItems?: GridItem[],
   gridSize?: 'small' | 'medium' | 'large',
   physicsConfig?: PhysicsConfig,
   horizontalConfig?: HorizontalConfig,

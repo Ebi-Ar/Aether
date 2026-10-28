@@ -2,51 +2,16 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, MoveUpRight, LayoutGrid, Sparkles, Filter, Zap, Globe, Command, ChevronRight, ShoppingCart } from 'lucide-react';
-
-// Extend Window interface for dynamically loaded GSAP libraries
-declare global {
-    interface Window {
-        gsap: any;
-        ScrollTrigger: any;
-    }
-}
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { MoveUpRight, LayoutGrid, Sparkles, Filter, Zap, Globe, Command, ChevronRight, ShoppingCart } from 'lucide-react';
 
 const App = () => {
-    const [gsapLoaded, setGsapLoaded] = useState(false);
     const [activeTab, setActiveTab] = useState('All');
     const mainRef = useRef(null);
     const gridRef = useRef(null);
 
     useEffect(() => {
-        const loadGSAP = async () => {
-            const loadScript = (src: string) => {
-                return new Promise((resolve, reject) => {
-                    const script = document.createElement('script');
-                    script.src = src;
-                    script.onload = resolve;
-                    script.onerror = reject;
-                    document.head.appendChild(script);
-                });
-            };
-
-            try {
-                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js');
-                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js');
-                setGsapLoaded(true);
-            } catch (error) {
-                console.error("GSAP load failed", error);
-            }
-        };
-
-        loadGSAP();
-    }, []);
-
-    useEffect(() => {
-        if (!gsapLoaded || !window.gsap) return;
-
-        const gsap = window.gsap;
-        const ScrollTrigger = window.ScrollTrigger;
         gsap.registerPlugin(ScrollTrigger);
 
         const ctx = gsap.context(() => {
@@ -76,8 +41,8 @@ const App = () => {
             });
 
             // 3. Floating Button Magnetic Effect (Global)
-            const buttons = gsap.utils.toArray('.magnetic-btn');
-            buttons.forEach((btn: any) => {
+            const buttons = gsap.utils.toArray<HTMLElement>('.magnetic-btn');
+            buttons.forEach((btn) => {
                 btn.addEventListener('mousemove', (e: MouseEvent) => {
                     const rect = btn.getBoundingClientRect();
                     const x = e.clientX - rect.left - rect.width / 2;
@@ -92,18 +57,15 @@ const App = () => {
         }, mainRef);
 
         return () => ctx.revert();
-    }, [gsapLoaded]);
+    }, []);
 
     // Simulated Filtering Transition
     useEffect(() => {
-        if (!gsapLoaded || !window.gsap) return;
-        const gsap = window.gsap;
-
         gsap.fromTo(".template-card",
             { opacity: 0, y: 10, scale: 0.98 },
             { opacity: 1, y: 0, scale: 1, stagger: 0.03, duration: 0.5, ease: "power2.out" }
         );
-    }, [activeTab, gsapLoaded]);
+    }, [activeTab]);
 
     const categories = ['All', 'Portfolio', 'SaaS', 'E-commerce', 'Agency'];
 
@@ -122,12 +84,6 @@ const App = () => {
 
     return (
         <div ref={mainRef} className="bg-[#fcfcfc] text-[#0a0a0a] selection:bg-black selection:text-white antialiased min-h-screen font-sans overflow-x-hidden">
-            {!gsapLoaded && (
-                <div className="fixed inset-0 z-[100] bg-white flex items-center justify-center">
-                    <div className="w-8 h-8 border-2 border-neutral-100 border-t-black rounded-full animate-spin" />
-                </div>
-            )}
-
             {/* Modern Top Nav */}
             <nav className="fixed top-14 w-full z-50 px-8 lg:px-16 py-6 flex justify-between items-center bg-white/70 backdrop-blur-xl border-b border-black/[0.03]">
                 <div className="flex items-center gap-2 cursor-pointer group">
@@ -139,10 +95,10 @@ const App = () => {
 
                 <div className="hidden lg:flex gap-10 items-center text-[11px] font-bold tracking-[0.2em] uppercase">
                     {['Discover', 'Templates', 'Designers', 'Learn'].map(item => (
-                        <a key={item} href="#" className="text-neutral-400 hover:text-black transition-colors">{item}</a>
+                        <a key={item} href="#" className="text-neutral-400 hover:text-black transition-colors" data-coming-soon title={`${item}: coming soon`}>{item}</a>
                     ))}
                     <div className="h-4 w-[1px] bg-neutral-200" />
-                    <button className="flex items-center gap-2 text-neutral-400 hover:text-black transition-colors">
+                    <button className="flex items-center gap-2 text-neutral-400 hover:text-black transition-colors" data-coming-soon title="Cart: coming soon">
                         <ShoppingCart size={16} />
                         <span>(0)</span>
                     </button>
@@ -225,7 +181,7 @@ const App = () => {
                                     </div>
                                 </Link>
                             ) : (
-                                <div key={i} className="template-card group cursor-pointer">
+                                <div key={i} className="template-card group cursor-pointer" data-coming-soon title="This template can't be opened yet: coming soon">
                                     {/* Image Container */}
                                     <div className="relative aspect-[4/3] rounded-[2rem] bg-neutral-100 overflow-hidden mb-8 shadow-sm group-hover:shadow-2xl transition-all duration-700">
                                         <img
@@ -278,7 +234,7 @@ const App = () => {
 
             {/* Floating CTA / Sticky Bar */}
             <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-50">
-                <div className="px-8 py-4 bg-black text-white rounded-full shadow-2xl flex items-center gap-8 backdrop-blur-md bg-black/90 border border-white/10 group cursor-pointer hover:scale-105 transition-transform">
+                <div className="px-8 py-4 bg-black text-white rounded-full shadow-2xl flex items-center gap-8 backdrop-blur-md bg-black/90 border border-white/10 group cursor-pointer hover:scale-105 transition-transform" data-coming-soon title="Selling templates: coming soon">
                     <div className="flex items-center gap-3">
                         <Zap size={16} className="text-emerald-400" />
                         <span className="text-[10px] font-bold tracking-[0.3em] uppercase">Start Selling Today</span>
@@ -329,7 +285,7 @@ const App = () => {
 
                     <div className="flex gap-12 text-[10px] font-black tracking-[0.4em] uppercase text-neutral-400">
                         {['Twitter', 'Instagram', 'Dribbble'].map(social => (
-                            <a key={social} href="#" className="hover:text-black transition-colors">{social}</a>
+                            <a key={social} href="#" className="hover:text-black transition-colors" data-coming-soon title={`${social}: coming soon`}>{social}</a>
                         ))}
                     </div>
                 </div>

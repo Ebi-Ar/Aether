@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react';
 interface UseHistoryResult<T> {
     state: T;
     setState: (newState: T | ((prev: T) => T)) => void;
+    // Replaces the state and clears undo/redo, e.g. when restoring a saved page.
+    reset: (newState: T) => void;
     undo: () => void;
     redo: () => void;
     canUndo: boolean;
@@ -30,6 +32,12 @@ export function useHistory<T>(initialState: T): UseHistoryResult<T> {
             }
             return resolvedState;
         });
+    }, []);
+
+    const reset = useCallback((newState: T) => {
+        _setState(newState);
+        setHistory([]);
+        setFuture([]);
     }, []);
 
     const undo = useCallback(() => {
@@ -61,6 +69,7 @@ export function useHistory<T>(initialState: T): UseHistoryResult<T> {
     return {
         state,
         setState,
+        reset,
         undo,
         redo,
         canUndo: history.length > 0,

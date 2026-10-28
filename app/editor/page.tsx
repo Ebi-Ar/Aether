@@ -1,20 +1,27 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { DndContext, useSensor, useSensors, DragEndEvent, DragMoveEvent, PointerSensor, Modifier } from '@dnd-kit/core';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { DndContext, useSensor, useSensors, DragEndEvent, DragMoveEvent, DragStartEvent, PointerSensor, Modifier } from '@dnd-kit/core';
 import { toast } from '@/hooks/use-toast';
 import { EditorLayout } from "@/components/editor/editor-layout";
 import { TopBar } from "@/components/editor/top-bar";
 import { LeftSidebar } from "@/components/editor/left-sidebar";
 import { RightSidebar } from "@/components/editor/right-sidebar";
-import { Canvas } from "@/components/editor/canvas";
-import { initialElements, EditorElement } from '@/lib/editor/store';
+import { Canvas, CANVAS_GUTTER, CANVAS_VIEWPORT_ID, CANVAS_WIDTH } from "@/components/editor/canvas";
+import { initialElements, BehaviorType, EditorElement } from '@/lib/editor/store';
 import { createDefaultElement } from '@/lib/editor/defaults';
+import { computeCanvasHeight, DEFAULT_PAGES, EditorDocument, parseEditorDocument } from '@/lib/editor/document';
 import { useHistory } from '@/lib/editor/use-history';
 import { calculateMagneticPull, globalSnapEngine, snapState, SnapTarget } from '@/lib/editor/snap-engine';
 import LZString from 'lz-string';
 
 const gridSize = 20;
+// Bump the version if the saved document shape changes incompatibly.
+const STORAGE_KEY = 'aether:editor:v1';
+
+// Timestamp-based so ids stay unique across reloads: a per-session counter
+// would collide with ids restored from the saved page.
+const createElementId = (subtype: string) => `${subtype}-${Date.now()}`;
 const FULL_WIDTH_SECTION_SUBTYPES = new Set([
     'navbar',
     'hero',
@@ -59,6 +66,7 @@ export default function EditorPage() {
     const {
         state: elements,
         setState: setElements,
+        reset: resetElements,
         undo,
         redo,
         canUndo,
@@ -70,9 +78,12 @@ export default function EditorPage() {
     const [activeDragId, setActiveDragId] = useState<string | null>(null);
     const [contactedElementIds, setContactedElementIds] = useState<string[]>([]);
     const [leftSidebarTab, setLeftSidebarTab] = useState<'design' | 'elements' | 'layers' | 'behaviors'>('design');
-    const [pages, setPages] = useState([{ id: 'home', name: 'Home' }]);
+    const [pages, setPages] = useState(DEFAULT_PAGES);
     const [activePageId, setActivePageId] = useState('home');
-    const [canvasHeight, setCanvasHeight] = useState(2500); // Increased default
+    const [hasRestored, setHasRestored] = useState(false);
+    const saveFailedRef = useRef(false);
+    // Auto-resize canvas based on content
+    const canvasHeight = useMemo(() => computeCanvasHeight(elements), [elements]);
     const canvasRectRef = useRef<{ left: number, top: number, width: number, height: number } | null>(null);
 
     // Initial fetch of page items and setup listeners
@@ -96,10 +107,45 @@ export default function EditorPage() {
     const measurementPrevLogicalRef = useRef<{ x: number; y: number } | null>(null);
     const measurementAxisRef = useRef<'x' | 'y' | null>(null);
     const measurementAxisHoldFramesRef = useRef(0);
-    const nextElementIdRef = useRef(1);
     const contactedElementIdsRef = useRef<string[]>([]);
     const pendingContactedElementIdsRef = useRef<string[]>([]);
     const contactFlushRafRef = useRef<number | null>(null);
+
+    // Restore the page saved in this browser. This runs after hydration because
+    // the server-rendered editor always starts empty.
+    useEffect(() => {
+        let saved: EditorDocument | null = null;
+        try {
+            const raw = window.localStorage.getItem(STORAGE_KEY);
+            saved = raw ? parseEditorDocument(JSON.parse(raw)) : null;
+        } catch (e) {
+            console.error("Failed to restore saved page", e);
+        }
+        /* eslint-disable react-hooks/set-state-in-effect -- syncing from browser storage, which the server can't read */
+        if (saved) {
+            resetElements(saved.elements);
+            setPages(saved.pages);
+            setActivePageId(saved.activePageId);
+        }
+        setHasRestored(true);
+        /* eslint-enable react-hooks/set-state-in-effect */
+    }, [resetElements]);
+
+    // Autosave every change once the saved page has been restored.
+    useEffect(() => {
+        if (!hasRestored) return;
+        const doc: EditorDocument = { elements, pages, activePageId };
+        try {
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(doc));
+            saveFailedRef.current = false;
+        } catch (e) {
+            console.error("Failed to save page", e);
+            if (!saveFailedRef.current) {
+                saveFailedRef.current = true;
+                toast({ title: "Not saved", description: "This browser blocked saving or its storage is full." });
+            }
+        }
+    }, [hasRestored, elements, pages, activePageId]);
 
     // Global mouse tracker for reliable drop positioning
     const mousePos = React.useRef({ x: 0, y: 0 });
@@ -793,27 +839,6 @@ export default function EditorPage() {
         if (selectedId === idToDelete) setSelectedId(null);
     };
 
-    // Auto-resize canvas based on content
-    useEffect(() => {
-        let maxBottom = 800;
-        elements.forEach(el => {
-            const top = parseInt(el.style.top?.toString() || '0');
-            // Try to parse height, fallback to 100 if auto/missing
-            let height = 0;
-            const hStr = el.style.height?.toString();
-            if (hStr && hStr.endsWith('px')) {
-                height = parseInt(hStr);
-            } else {
-                height = 100; // Estimate for text/auto
-            }
-            if (top + height > maxBottom) {
-                maxBottom = top + height;
-            }
-        });
-        // Add buffer
-        setCanvasHeight(Math.max(800, maxBottom));
-    }, [elements]);
-
     useEffect(() => {
         const handlePointerMove = (e: PointerEvent | MouseEvent | TouchEvent) => {
             let x = 0;
@@ -875,31 +900,27 @@ export default function EditorPage() {
         };
     }, []);
 
-    // Auto-scale calculation - fit canvas to window width
+    // Auto-scale calculation - fit the canvas to the space between the sidebars.
+    // ResizeObserver reports the initial size too, and re-fires when the
+    // sidebars appear or disappear on preview toggle.
     useEffect(() => {
-        const handleResize = () => {
-            const containerWidth = window.innerWidth;
-            const sidebarsWidth = isPreview ? 0 : 520; // Approx 256px (Left) + 260px (Right) + padding
-            const availableWidth = containerWidth - sidebarsWidth;
-            const canvasWidth = 900; // Base canvas width
+        const viewport = document.getElementById(CANVAS_VIEWPORT_ID);
+        if (!viewport) return;
 
+        const observer = new ResizeObserver(() => {
+            const viewportWidth = viewport.clientWidth;
             if (isPreview) {
                 // In Preview: strictly fit to width, allowing upscale > 1
                 // This simulates a full-width experience on a fixed-width design
-                const newScale = containerWidth / canvasWidth;
-                setScale(newScale);
+                setScale(viewportWidth / CANVAS_WIDTH);
             } else {
                 // In Editor: Scale down for smaller screens, but don't upscale beyond 100%
-                // Use a slight buffer (0.95) to prevent edge touching
-                const availableWidth = containerWidth - sidebarsWidth;
-                const newScale = Math.min((availableWidth / canvasWidth) * 0.95, 1);
+                const newScale = Math.min((viewportWidth - CANVAS_GUTTER * 2) / CANVAS_WIDTH, 1);
                 setScale(Math.max(newScale, 0.2)); // Minimum scale safety
             }
-        };
-
-        handleResize(); // Initial calculation
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        });
+        observer.observe(viewport);
+        return () => observer.disconnect();
     }, [isPreview]); // Re-calculate when preview mode toggles
 
     // Handle Delete Key
@@ -932,10 +953,7 @@ export default function EditorPage() {
         // Add to pages list
         setPages([...pages, { id: newPageId, name: newPageName }]);
 
-        // Extend canvas
-        setCanvasHeight(prev => prev + pageHeight);
-
-        // Add visual separator/container for the new page
+        // Add visual separator/container for the new page (the canvas grows to fit it)
         const newPageSection: EditorElement = {
             id: newPageId,
             type: 'box',
@@ -979,9 +997,8 @@ export default function EditorPage() {
             return;
         }
 
-        const id = `${subtype}-${nextElementIdRef.current++}`;
-        const canvasNode = document.getElementById('canvas-droppable');
-        const scrollContainer = canvasNode?.parentElement?.parentElement as HTMLElement | null;
+        const id = createElementId(subtype);
+        const scrollContainer = document.getElementById(CANVAS_VIEWPORT_ID);
         const scrollTop = scrollContainer?.scrollTop ?? 0;
         const dropX = 120;
         const dropY = Math.max(40, Math.round((scrollTop / Math.max(scale, 0.01) + 120) / 10) * 10);
@@ -991,8 +1008,8 @@ export default function EditorPage() {
         toast({ description: `Added ${subtype}` });
     };
 
-    const handleDragStart = (event: any) => {
-        setActiveDragId(event.active.id);
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveDragId(String(event.active.id));
         queueContactedElementIds([]);
         clearSnapTransientState();
         velocityRef.current.vx = 0;
@@ -1003,7 +1020,7 @@ export default function EditorPage() {
 
         // Store scale for DOM calculations
         if (typeof window !== 'undefined') {
-            (window as any)._canvasScale = scale;
+            (window as Window & { _canvasScale?: number })._canvasScale = scale;
         }
 
         const canvas = document.getElementById('canvas-droppable');
@@ -1154,8 +1171,6 @@ export default function EditorPage() {
                 };
             });
 
-            const refTop = (targetRect.top - canvasRect.top) / scale;
-            const refH = targetRect.height / scale;
             snapState.set({
                 x: null,
                 y: {
@@ -1181,7 +1196,6 @@ export default function EditorPage() {
         }
 
         // Get rect of the target element
-        // @ts-ignore - dnd-kit types for rect are sometimes tricky to access directly on event.over
         const overRect = over.rect;
 
         if (!overRect) return;
@@ -1365,7 +1379,7 @@ export default function EditorPage() {
                     const newBehaviorId = `b-${Date.now()}`;
                     const newBehavior = {
                         id: newBehaviorId,
-                        type: behaviorId as any,
+                        type: behaviorId as BehaviorType,
                         config: {}
                     };
                     return { ...el, behaviors: [...el.behaviors, newBehavior] };
@@ -1461,8 +1475,8 @@ export default function EditorPage() {
                     if (initialRect && delta) {
                         const finalLeft = initialRect.left + delta.x;
                         const finalTop = initialRect.top + delta.y;
-                        let rawX = (finalLeft - canvasRect.left) / scale;
-                        let rawY = (finalTop - canvasRect.top) / scale;
+                        const rawX = (finalLeft - canvasRect.left) / scale;
+                        const rawY = (finalTop - canvasRect.top) / scale;
                         dropX = Math.round(rawX / gridSize) * gridSize;
                         dropY = Math.round(rawY / gridSize) * gridSize;
 
@@ -1500,8 +1514,8 @@ export default function EditorPage() {
                         const clientX = mousePos.current.x;
                         const clientY = mousePos.current.y;
                         if (clientX && clientY) {
-                            let calculatedX = (clientX - canvasRect.left) / scale;
-                            let calculatedY = (clientY - canvasRect.top) / scale;
+                            const calculatedX = (clientX - canvasRect.left) / scale;
+                            const calculatedY = (clientY - canvasRect.top) / scale;
                             const estW = 100; const estH = 100;
                             dropX = Math.round((calculatedX - (estW / 2)) / gridSize) * gridSize;
                             dropY = Math.round((calculatedY - (estH / 2)) / gridSize) * gridSize;
@@ -1802,7 +1816,7 @@ export default function EditorPage() {
         }));
     };
 
-    const handleUpdateBehavior = (elementId: string, behaviorId: string, configUpdates: Record<string, any>) => {
+    const handleUpdateBehavior = (elementId: string, behaviorId: string, configUpdates: Record<string, unknown>) => {
         setElements(prev => prev.map(el => {
             if (el.id === elementId) {
                 return {
@@ -1851,11 +1865,12 @@ export const SITE_DATA: {
         try {
             await navigator.clipboard.writeText(fileContent);
             toast({
-                title: "Code Copied!",
-                description: "Paste the code into 'lib/site-data.ts' and deploy to publish."
+                title: "Publishing isn't built yet",
+                description: "For now, the page's code was copied to your clipboard."
             });
         } catch (err) {
             console.error("Failed to copy", err);
+            toast({ title: "Publishing isn't built yet", description: "Copying the page's code also failed." });
         }
     };
 
@@ -2284,15 +2299,14 @@ export const SITE_DATA: {
                     onRedo={redo}
                     canUndo={canUndo}
                     canRedo={canRedo}
+                    scale={scale}
+                    saveStatus={hasRestored ? 'Saved in this browser' : 'Loading…'}
                     onEffectsClick={() => setLeftSidebarTab('behaviors')}
                     isEffectsActive={leftSidebarTab === 'behaviors'}
                 />}
                 leftSidebar={!isPreview ? <LeftSidebar
                     elements={elements}
-                    onSelect={(id: string | null) => {
-                        setSelectedId(id);
-                        if (id) toast({ description: `Selected Layer: ${id}` });
-                    }}
+                    onSelect={setSelectedId}
                     selectedId={selectedId}
 
                     // Pages props
@@ -2311,7 +2325,7 @@ export const SITE_DATA: {
                     element={selectedElement}
                     elements={elements}
                     onUpdate={(updates: Partial<EditorElement>) => selectedId && handleUpdateElement(selectedId, updates)}
-                    onUpdateBehavior={(behaviorId: string, updates: Record<string, any>) => selectedId && handleUpdateBehavior(selectedId, behaviorId, updates)}
+                    onUpdateBehavior={(behaviorId: string, updates: Record<string, unknown>) => selectedId && handleUpdateBehavior(selectedId, behaviorId, updates)}
                     onRemoveBehavior={(behaviorId: string) => selectedId && handleRemoveBehavior(selectedId, behaviorId)}
                     onDelete={() => {
                         if (selectedId) {
@@ -2322,10 +2336,7 @@ export const SITE_DATA: {
             >
                 <Canvas
                     elements={elements}
-                    onSelect={(id: string) => {
-                        setSelectedId(id);
-                        toast({ description: `Selected Element: ${id}` });
-                    }}
+                    onSelect={setSelectedId}
                     onUpdate={handleUpdateElement}
                     selectedId={selectedId}
                     height={canvasHeight}

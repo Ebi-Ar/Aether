@@ -25,11 +25,13 @@ interface TopBarProps {
     onRedo?: () => void;
     canUndo?: boolean;
     canRedo?: boolean;
+    scale?: number;
+    saveStatus?: string;
     onEffectsClick?: () => void;
     isEffectsActive?: boolean;
 }
 
-export function TopBar({ isPreview, onPreviewToggle, onShare, onPublish, onUndo, onRedo, canUndo, canRedo, onEffectsClick, isEffectsActive }: TopBarProps) {
+export function TopBar({ isPreview, onPreviewToggle, onShare, onPublish, onUndo, onRedo, canUndo, canRedo, scale = 1, saveStatus = 'Draft', onEffectsClick, isEffectsActive }: TopBarProps) {
     return (
         <div className="h-full w-full flex items-center justify-between px-4 bg-background/80 backdrop-blur-md">
             {/* Left: Navigation */}
@@ -41,7 +43,7 @@ export function TopBar({ isPreview, onPreviewToggle, onShare, onPublish, onUndo,
                 </Link>
                 <div className="flex flex-col">
                     <span className="text-sm font-medium">Untitled Page</span>
-                    <span className="text-xs text-muted-foreground">Draft</span>
+                    <span className="text-xs text-muted-foreground">{saveStatus}</span>
                 </div>
             </div>
 
@@ -61,13 +63,13 @@ export function TopBar({ isPreview, onPreviewToggle, onShare, onPublish, onUndo,
                         <Button variant="secondary" size="icon" className="h-8 w-8 bg-primary/10 text-primary">
                             <MousePointer2 className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" data-coming-soon title="Layout tool: coming soon">
                             <Layout className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" data-coming-soon title="Text tool: coming soon">
                             <Type className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" data-coming-soon title="Image tool: coming soon">
                             <ImageIcon className="w-4 h-4" />
                         </Button>
                         <Button
@@ -84,9 +86,9 @@ export function TopBar({ isPreview, onPreviewToggle, onShare, onPublish, onUndo,
 
             {/* Right: Actions */}
             <div className="ui-button-row relative z-50">
-                <div className="ui-cluster-sm mr-4 text-xs text-muted-foreground">
+                <div className="ui-cluster-sm mr-4 text-xs text-muted-foreground" title="Canvas zoom, fitted to your screen">
                     <Monitor className="w-3 h-3" />
-                    <span>100%</span>
+                    <span>{Math.round(scale * 100)}%</span>
                 </div>
                 <Button
                     size="sm"
@@ -107,18 +109,17 @@ export function TopBar({ isPreview, onPreviewToggle, onShare, onPublish, onUndo,
                 </Button>
                 {!isPreview && (
                     <>
-                        <Button size="sm" variant="outline" className="h-8 gap-2 bg-transparent" onClick={() => {
-                            console.log("TopBar: Share button clicked");
-                            if (onShare) onShare();
-                            else console.error("TopBar: onShare prop is missing");
-                        }}>
+                        <Button size="sm" variant="outline" className="h-8 gap-2 bg-transparent" onClick={onShare}>
                             <Share2 className="w-3 h-3" />
                             Share
                         </Button>
                         <Button
                             size="sm"
-                            className="h-8 px-4 bg-white text-black hover:bg-gray-200 text-xs font-semibold tracking-wide border border-transparent"
+                            variant="outline"
+                            className="h-8 px-4 bg-transparent text-xs font-semibold tracking-wide"
                             onClick={onPublish}
+                            data-coming-soon
+                            title="Publishing: coming soon. For now this copies the page's code."
                         >
                             PUBLISH
                         </Button>

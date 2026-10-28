@@ -1,55 +1,20 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { BookOpen, Command, ChevronRight, Play, Compass, ArrowRight, Share2, Info } from 'lucide-react';
-
-// Extend Window interface for dynamically loaded GSAP libraries
-declare global {
-    interface Window {
-        gsap: any;
-        ScrollTrigger: any;
-    }
-}
+import React, { useEffect, useRef } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { BookOpen, Command, ChevronRight, Play, Compass, ArrowRight } from 'lucide-react';
 
 const App = () => {
-    const [gsapLoaded, setGsapLoaded] = useState(false);
     const mainRef = useRef(null);
 
     useEffect(() => {
-        const loadGSAP = async () => {
-            const loadScript = (src: string) => {
-                return new Promise((resolve, reject) => {
-                    const script = document.createElement('script');
-                    script.src = src;
-                    script.onload = resolve;
-                    script.onerror = reject;
-                    document.head.appendChild(script);
-                });
-            };
-
-            try {
-                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js');
-                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js');
-                setGsapLoaded(true);
-            } catch (error) {
-                console.error("GSAP load failed", error);
-            }
-        };
-
-        loadGSAP();
-    }, []);
-
-    useEffect(() => {
-        if (!gsapLoaded || !window.gsap) return;
-
-        const gsap = window.gsap;
-        const ScrollTrigger = window.ScrollTrigger;
         gsap.registerPlugin(ScrollTrigger);
 
         const ctx = gsap.context(() => {
-            const pages = gsap.utils.toArray('.magazine-page');
+            const pages = gsap.utils.toArray<HTMLElement>('.magazine-page');
 
-            pages.forEach((page: any, i: number) => {
+            pages.forEach((page, i) => {
                 // We skip the last page to keep it as the "back cover"
                 if (i < pages.length - 1) {
                     const content = page.querySelector('.page-content');
@@ -89,7 +54,7 @@ const App = () => {
             });
 
             // Scroll-triggered internal text entrance
-            pages.forEach((page: any) => {
+            pages.forEach((page) => {
                 const textItems = page.querySelectorAll('.stagger-text');
                 if (textItems.length) {
                     gsap.from(textItems, {
@@ -110,7 +75,7 @@ const App = () => {
         }, mainRef);
 
         return () => ctx.revert();
-    }, [gsapLoaded]);
+    }, []);
 
     const sections = [
         {
@@ -145,12 +110,6 @@ const App = () => {
 
     return (
         <div ref={mainRef} className="bg-[#050505] text-white selection:bg-white selection:text-black antialiased font-sans overflow-x-hidden">
-            {!gsapLoaded && (
-                <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
-                    <div className="w-8 h-8 border-2 border-white/5 border-t-white rounded-full animate-spin" />
-                </div>
-            )}
-
             {/* Luxury Nav */}
             <nav className="fixed top-14 w-full z-50 px-8 lg:px-16 py-10 flex justify-between items-center mix-blend-difference">
                 <div className="flex items-center gap-4 group cursor-pointer">

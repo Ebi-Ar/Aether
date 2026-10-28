@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
 
 /**
  * Aether Landing Page - High Luminosity Version
@@ -8,7 +11,6 @@ import React, { useEffect, useRef, useState } from 'react';
  * layered glows and enhanced lighting.
  */
 export function HomePage() {
-    const [gsapLoaded, setGsapLoaded] = useState(false);
     const logoRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLHeadingElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -22,44 +24,10 @@ export function HomePage() {
     const dataStreamRef = useRef<HTMLDivElement>(null);
     const mousePos = useRef({ x: 0, y: 0 });
     const lastMousePos = useRef({ x: 0, y: 0 });
-    const currentRotation = useRef(0); // Track current rotation to prevent flips
 
-    // Load GSAP via CDN (Keep existing effect)
-    useEffect(() => {
-        if ((window as any).gsap) {
-            setGsapLoaded(true);
-            return;
-        }
-
-        const script = document.createElement('script');
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js";
-        script.async = true;
-        script.onload = () => {
-            // Load ScrollTrigger plugin as well if possible, or just use basic timeline loop
-            const stScript = document.createElement('script');
-            stScript.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js";
-            stScript.async = true;
-            stScript.onload = () => setGsapLoaded(true);
-            document.head.appendChild(stScript);
-        };
-        document.head.appendChild(script);
-
-        return () => {
-            if (document.head.contains(script)) {
-                document.head.removeChild(script);
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        if (!gsapLoaded || !(window as any).gsap) return;
-
-        const gsap = (window as any).gsap;
-        const ScrollTrigger = (window as any).ScrollTrigger;
-
-        if (ScrollTrigger) {
-            gsap.registerPlugin(ScrollTrigger);
-        }
+    // useGSAP reverts every animation created here when the page unmounts.
+    useGSAP(() => {
+        gsap.registerPlugin(ScrollTrigger);
 
         const tl = gsap.timeline();
 
@@ -96,13 +64,6 @@ export function HomePage() {
         });
 
         // 3. Mouse Parallax & Fluid Physics
-        const xTo = (gsap as any).quickTo(cursorRef.current, "x", { duration: 0.7, ease: "power3.out" });
-        const yTo = (gsap as any).quickTo(cursorRef.current, "y", { duration: 0.7, ease: "power3.out" });
-
-        // Chromatic reflection layer with slower tracking
-        const xToReflection = (gsap as any).quickTo(cursorReflectionRef.current, "x", { duration: 0.9, ease: "power3.out" });
-        const yToReflection = (gsap as any).quickTo(cursorReflectionRef.current, "y", { duration: 0.9, ease: "power3.out" });
-
         const handleMouseMove = (e: MouseEvent) => {
             const { clientX, clientY } = e;
 
@@ -311,7 +272,7 @@ export function HomePage() {
         }
 
         // 5. Feature Cards Animation
-        if (cardsRef.current && ScrollTrigger) {
+        if (cardsRef.current) {
             const cards = cardsRef.current.querySelectorAll('.feature-card');
 
             gsap.fromTo(cards,
@@ -346,7 +307,7 @@ export function HomePage() {
                 scrollContainer.removeEventListener('scroll', updateAuraRotation);
             }
         };
-    }, [gsapLoaded]);
+    }, { scope: containerRef });
 
     return (
         <div ref={containerRef} id="main-scroll-container" style={styles.container}>
@@ -375,7 +336,7 @@ export function HomePage() {
                     <p style={styles.subtitle}>CINEMATIC LANDING PAGE BUILDER</p>
 
                     <a
-                        href="/legacy-library"
+                        href="/editor"
                         style={styles.ctaButton}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.transform = 'scale(1.05)';

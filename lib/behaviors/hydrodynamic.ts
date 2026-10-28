@@ -29,9 +29,13 @@ export function applyHydrodynamicBehavior(
     const textContent = element.innerText;
     // Simple check: if it has no span children, split it
     if (element.children.length === 0 && textContent.trim().length > 0) {
-        element.innerHTML = textContent.split('').map(char =>
-            `<span style="display:inline-block; user-select:none; vertical-align:baseline;">${char === ' ' ? '&nbsp;' : char}</span>`
-        ).join('');
+        // Built with textContent rather than innerHTML so user text is never parsed as markup.
+        element.replaceChildren(...textContent.split('').map(char => {
+            const span = document.createElement('span');
+            span.style.cssText = 'display:inline-block; user-select:none; vertical-align:baseline;';
+            span.textContent = char === ' ' ? ' ' : char;
+            return span;
+        }));
     }
 
     const chars = Array.from(element.children) as HTMLElement[];

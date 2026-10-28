@@ -6,7 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Play, RotateCcw, MousePointer2, Maximize2, Minimize2, Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { AnimationStyle, GridItem, GridSize, PhysicsConfig, HorizontalConfig, HydrodynamicConfig } from './types';
+import { AnimationStyle, GridItem, GridSize, PhysicsConfig, HorizontalConfig, HorizontalScrollItem, HydrodynamicConfig } from './types';
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
@@ -926,7 +926,7 @@ export const Preview = memo<PreviewProps>(function Preview({ headline, imageUrl,
                             </div>
 
                             {/* Gallery Items */}
-                            {(horizontalConfig?.items || [...Array(6)].map((_, i) => ({ id: i }))).map((item, i) => (
+                            {(horizontalConfig?.items || [...Array(6)].map((_, i): Partial<HorizontalScrollItem> & { id: number } => ({ id: i }))).map((item: Partial<HorizontalScrollItem> & { id: number }, i) => (
                                 <div
                                     key={i}
                                     className="relative w-[80vw] md:w-[60vw] h-[60vh] bg-neutral-800 rounded-[2rem] overflow-hidden shrink-0 group cursor-pointer transition-transform duration-300 hover:scale-[0.98]"
@@ -934,7 +934,7 @@ export const Preview = memo<PreviewProps>(function Preview({ headline, imageUrl,
                                         borderRadius: horizontalConfig?.layout.radius ? `${horizontalConfig.layout.radius}px` : '2rem'
                                     }}
                                     onClick={() => {
-                                        const link = (horizontalConfig && 'link' in item) ? (item as any).link : '#';
+                                        const link = (horizontalConfig && 'link' in item) ? item.link : '#';
                                         if (link && link !== '#') {
                                             window.open(link, '_blank');
                                         }
@@ -944,7 +944,7 @@ export const Preview = memo<PreviewProps>(function Preview({ headline, imageUrl,
                                         src={
                                             // Prefer item image, then sequence, then main imageUrl, then default
                                             (horizontalConfig && 'image' in item && item.image)
-                                                ? (item as any).image
+                                                ? item.image
                                                 : (imageSequence && imageSequence.length > 0)
                                                     ? imageSequence[i % imageSequence.length]
                                                     : (imageUrl || defaultImage)
@@ -956,37 +956,37 @@ export const Preview = memo<PreviewProps>(function Preview({ headline, imageUrl,
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
                                     <div
-                                        className={`absolute bottom-0 left-0 right-0 p-8 flex justify-between items-end transition-transform duration-300 ${(horizontalConfig && 'blendMode' in item && (item as any).blendMode) ? 'mix-blend-difference' : ''}`}
+                                        className={`absolute bottom-0 left-0 right-0 p-8 flex justify-between items-end transition-transform duration-300 ${(horizontalConfig && 'blendMode' in item && item.blendMode) ? 'mix-blend-difference' : ''}`}
                                         style={{
-                                            transform: `translate(${(item as any).textPosition?.x || 0}px, ${(item as any).textPosition?.y || 0}px)`,
+                                            transform: `translate(${item.textPosition?.x || 0}px, ${item.textPosition?.y || 0}px)`,
                                             cursor: 'move'
                                         }}
-                                        onMouseDown={(e) => handleTextDragStart(e, item.id, (item as any).textPosition)}
+                                        onMouseDown={(e) => handleTextDragStart(e, item.id, item.textPosition)}
                                         onClick={(e) => e.stopPropagation()} // Prevent card click
                                     >
                                         <div>
                                             <h3
-                                                className={`text-3xl font-bold mb-1 ${(horizontalConfig && 'textGradient' in item && (item as any).textGradient) ? 'bg-clip-text text-transparent' : ''}`}
+                                                className={`text-3xl font-bold mb-1 ${(horizontalConfig && 'textGradient' in item && item.textGradient) ? 'bg-clip-text text-transparent' : ''}`}
                                                 style={{
                                                     fontSize: horizontalConfig?.typography.titleSize ? `${horizontalConfig.typography.titleSize}px` : undefined,
-                                                    backgroundImage: (horizontalConfig && 'textGradient' in item && (item as any).textGradient)
-                                                        ? `linear-gradient(to bottom, ${(item as any).gradientStart || '#ffffff'}, ${(item as any).gradientEnd || '#999999'})`
+                                                    backgroundImage: (horizontalConfig && 'textGradient' in item && item.textGradient)
+                                                        ? `linear-gradient(to bottom, ${item.gradientStart || '#ffffff'}, ${item.gradientEnd || '#999999'})`
                                                         : undefined,
-                                                    WebkitBackgroundClip: (horizontalConfig && 'textGradient' in item && (item as any).textGradient) ? 'text' : undefined,
-                                                    WebkitTextFillColor: (horizontalConfig && 'textGradient' in item && (item as any).textGradient) ? 'transparent' : undefined,
-                                                    color: (horizontalConfig && 'textGradient' in item && (item as any).textGradient) ? undefined : ((horizontalConfig && 'textColor' in item) ? (item as any).textColor : '#ffffff')
+                                                    WebkitBackgroundClip: (horizontalConfig && 'textGradient' in item && item.textGradient) ? 'text' : undefined,
+                                                    WebkitTextFillColor: (horizontalConfig && 'textGradient' in item && item.textGradient) ? 'transparent' : undefined,
+                                                    color: (horizontalConfig && 'textGradient' in item && item.textGradient) ? undefined : ((horizontalConfig && 'textColor' in item) ? item.textColor : '#ffffff')
                                                 }}
                                             >
-                                                {(horizontalConfig && 'title' in item) ? (item as any).title : `Project 0${i + 1}`}
+                                                {(horizontalConfig && 'title' in item) ? item.title : `Project 0${i + 1}`}
                                             </h3>
                                             <p
                                                 className="text-sm opacity-80"
                                                 style={{
                                                     fontSize: horizontalConfig?.typography.labelSize ? `${horizontalConfig.typography.labelSize}px` : undefined,
-                                                    color: (horizontalConfig && 'textColor' in item) ? (item as any).textColor : '#a3a3a3'
+                                                    color: (horizontalConfig && 'textColor' in item) ? item.textColor : '#a3a3a3'
                                                 }}
                                             >
-                                                {(horizontalConfig && 'subtitle' in item) ? (item as any).subtitle : 'Interaction Design'}
+                                                {(horizontalConfig && 'subtitle' in item) ? item.subtitle : 'Interaction Design'}
                                             </p>
                                         </div>
                                     </div>

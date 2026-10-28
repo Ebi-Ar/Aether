@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useGSAP } from '@gsap/react';
 import { EditorElement } from '@/lib/editor/store';
-import { applyHydrodynamicBehavior } from '@/lib/behaviors/hydrodynamic';
-import { applyPhysicsCardBehavior } from '@/lib/behaviors/physics-card';
+import { sanitizeHtml } from '@/lib/editor/sanitize';
+import { applyHydrodynamicBehavior, HydrodynamicConfig } from '@/lib/behaviors/hydrodynamic';
+import { applyPhysicsCardBehavior, PhysicsCardConfig } from '@/lib/behaviors/physics-card';
 import { applyAppleZoomBehavior } from '@/lib/behaviors/apple-zoom';
 
 interface CanvasElementProps {
@@ -87,11 +88,11 @@ export function CanvasElement({ element, onSelect, onUpdate, selected, readOnly,
             const target = elRef.current as HTMLElement;
 
             if (behavior.type === 'hydrodynamic') {
-                cleanup = applyHydrodynamicBehavior(target, behavior.config);
+                cleanup = applyHydrodynamicBehavior(target, behavior.config as Partial<HydrodynamicConfig>);
             } else if (behavior.type === 'physics-card') {
-                cleanup = applyPhysicsCardBehavior(target, behavior.config);
+                cleanup = applyPhysicsCardBehavior(target, behavior.config as Partial<PhysicsCardConfig>);
             } else if (behavior.type === 'apple-zoom') {
-                cleanup = applyAppleZoomBehavior(target, behavior.config);
+                cleanup = applyAppleZoomBehavior(target);
             }
 
             if (cleanup) cleanups.push(cleanup);
@@ -106,6 +107,7 @@ export function CanvasElement({ element, onSelect, onUpdate, selected, readOnly,
         dependencies: [element.behaviors, element.content] // Re-run when behaviors or content change
     });
 
+    const safeContent = useMemo(() => sanitizeHtml(element.content), [element.content]);
     const [isEditing, setIsEditing] = useState(false);
     const isButtonLabelElement = element.type === 'box' && /<button\b[\s\S]*<\/button>/i.test(element.content);
     const isNavbarInlineLabel = /-brand$|-link-\d+$/.test(element.id);
@@ -296,7 +298,7 @@ export function CanvasElement({ element, onSelect, onUpdate, selected, readOnly,
             contentEditable={isEditing}
             suppressContentEditableWarning
             className={`group ${isEditing || readOnly ? 'select-text' : 'select-none'} ${isEditing ? 'cursor-text' : ''}`}
-            dangerouslySetInnerHTML={{ __html: element.content }}
+            dangerouslySetInnerHTML={{ __html: safeContent }}
         />
     );
 }

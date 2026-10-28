@@ -5,7 +5,7 @@ if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
 }
 
-export function applyAppleZoomBehavior(element: HTMLElement, config?: any) {
+export function applyAppleZoomBehavior(element: HTMLElement) {
     // Ensure we are targeting an image if possible, or scale the container
     const target = element.tagName === 'IMG' ? element : element.querySelector('img') || element;
 

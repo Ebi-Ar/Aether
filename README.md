@@ -6,19 +6,31 @@ motion is part of the layout rather than something added afterwards.
 **Live:** https://itsaether.vercel.app
 
 > Actively in development. The landing page, editor, template gallery and
-> component library are live.
+> component library are live. **Orange buttons and links are features that
+> aren't built yet**: they're kept visible as a to-do list. Hover one to see
+> what's missing.
 
 ## What it does
 
 Pages are assembled in the browser: a layers tree on the left, a live canvas in
 the middle, and per-element properties and behaviours on the right. Sections are
-reordered by drag and drop, previewed at desktop or mobile widths, and published
-from the editor.
+reordered by drag and drop, previewed full-screen, and shared as a link. Work is
+saved automatically in the browser. Publishing to a real site address is not
+built yet.
 
-Motion is driven by a set of physics primitives — gravity, friction and inertia —
-built on GSAP, with Three.js and WebGL handling the scene work (lens flares,
-lighting, depth). The goal is that an animation is configured as a property of an
+Motion is driven by a set of physics primitives (gravity, friction and inertia)
+built on GSAP. The goal is that an animation is configured as a property of an
 element, not written by hand for every page.
+
+### Marking unfinished features
+
+Give the button or link a `data-coming-soon` attribute and a `title` saying
+what's missing; `app/globals.css` turns it orange. Remove both once the feature
+works. To list what's still unfinished, search for them:
+
+```
+grep -rn "data-coming-soon" app components
+```
 
 ## Routes
 
@@ -33,8 +45,7 @@ element, not written by hand for every page.
 
 ## Stack
 
-Next.js 16 · React 19 · TypeScript · GSAP · Three.js · Tailwind CSS 4 ·
-Radix UI · dnd-kit · TanStack Query
+Next.js 16 · React 19 · TypeScript · GSAP · Tailwind CSS 4 · Radix UI · dnd-kit
 
 ## Running locally
 
