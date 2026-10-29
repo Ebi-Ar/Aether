@@ -18,9 +18,27 @@ reordered by drag and drop, previewed full-screen, and shared as a link. Work is
 saved automatically in the browser. Publishing to a real site address is not
 built yet.
 
-Motion is driven by a set of physics primitives (gravity, friction and inertia)
-built on GSAP. The goal is that an animation is configured as a property of an
-element, not written by hand for every page.
+Effects are dragged from the editor's Effects tab onto an element and tuned
+with sliders, so an animation is a property of an element rather than code
+written for every page. Developers can copy any effect as GSAP or Motion code
+for their own sites.
+
+### Effects library
+
+Every effect lives in `lib/effect-library`, one file each, and is defined once:
+its name, which elements it works on, its sliders, how it runs in the editor and
+on shared pages (on [Motion](https://motion.dev)), and the code developers can
+copy (GSAP and Motion). To add an effect, create a file next to the others and
+register it in `lib/effect-library/index.ts`; it then appears in the Effects
+tab, the properties panel and the copy-code buttons.
+
+| Effect | Trigger | Works on |
+|---|---|---|
+| Apple Zoom | Scroll | Any element (zooms the image inside, if there is one) |
+| Hydrodynamic Text | Cursor | Text |
+| Physics Card | Cursor | Any element |
+
+The Legacy Library (`/legacy-library`) still runs on GSAP.
 
 ### Marking unfinished features
 
@@ -45,7 +63,7 @@ grep -rn "data-coming-soon" app components
 
 ## Stack
 
-Next.js 16 · React 19 · TypeScript · GSAP · Tailwind CSS 4 · Radix UI · dnd-kit
+Next.js 16 · React 19 · TypeScript · Motion · GSAP · Tailwind CSS 4 · Radix UI · dnd-kit
 
 ## Running locally
 

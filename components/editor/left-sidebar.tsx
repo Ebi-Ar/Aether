@@ -3,7 +3,7 @@ import { DraggableBehaviorItem } from './draggable-behavior';
 import { useState } from 'react';
 import {
     LayoutTemplate, Plus, Home, Type, Image as ImageIcon, Box, Square, CreditCard, PlayCircle,
-    Lock, Eye, MessageSquare, DollarSign, List, PanelBottom, PanelTop
+    Lock, Eye, MessageSquare, DollarSign, List, PanelBottom, PanelTop, MousePointer2, ArrowDownUp
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,6 +13,13 @@ import {
     DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { EditorElement } from '@/lib/editor/store';
+import { EFFECT_LIST, EFFECT_TRIGGER_LABELS, EffectTrigger } from '@/lib/effect-library';
+
+const TRIGGER_ICONS: Record<EffectTrigger, React.ReactNode> = {
+    scroll: <ArrowDownUp className="w-3 h-3" />,
+    cursor: <MousePointer2 className="w-3 h-3" />
+};
+const TRIGGERS = Object.keys(EFFECT_TRIGGER_LABELS) as EffectTrigger[];
 
 interface LeftSidebarProps {
     elements: EditorElement[];
@@ -218,33 +225,29 @@ export function LeftSidebar({
                     <div className="mx-1 mt-2 mb-2 rounded-md border border-border/40 bg-muted/20 px-2 py-1.5 text-[10px] text-muted-foreground">
                         Drag an effect onto an element to apply it.
                     </div>
-                    <Accordion type="multiple" defaultValue={["text", "image", "page"]} className="w-full">
+                    <Accordion type="multiple" defaultValue={[...TRIGGERS, "page"]} className="w-full">
 
-                        <AccordionItem value="text" className="border-b border-border/40">
-                            <AccordionTrigger className="py-2 hover:no-underline text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                                <div className="flex items-center gap-2">
-                                    <Type className="w-3 h-3" />
-                                    Text
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="flex flex-col gap-2 pb-3">
-                                {/* Use generic DraggableItem instead of DraggableBehaviorItem for consistency if desired, or keep legacy */}
-                                <DraggableBehaviorItem id="hydrodynamic" label="Hydrodynamic Text" />
-                            </AccordionContent>
-                        </AccordionItem>
-
-                        <AccordionItem value="image" className="border-b border-border/40">
-                            <AccordionTrigger className="py-2 hover:no-underline text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                                <div className="flex items-center gap-2">
-                                    <ImageIcon className="w-3 h-3" />
-                                    Image
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="flex flex-col gap-2 pb-3">
-                                <DraggableBehaviorItem id="apple-zoom" label="Apple Zoom (Scroll)" />
-                                <DraggableBehaviorItem id="physics-card" label="Gravity Card" />
-                            </AccordionContent>
-                        </AccordionItem>
+                        {/* One group per trigger, filled from lib/effect-library */}
+                        {TRIGGERS.map(trigger => (
+                            <AccordionItem key={trigger} value={trigger} className="border-b border-border/40">
+                                <AccordionTrigger className="py-2 hover:no-underline text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                                    <div className="flex items-center gap-2">
+                                        {TRIGGER_ICONS[trigger]}
+                                        {EFFECT_TRIGGER_LABELS[trigger]}
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="flex flex-col gap-2 pb-3">
+                                    {EFFECT_LIST.filter(effect => effect.trigger === trigger).map(effect => (
+                                        <DraggableBehaviorItem
+                                            key={effect.id}
+                                            id={effect.id}
+                                            label={effect.name}
+                                            description={effect.description}
+                                        />
+                                    ))}
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
 
                         <AccordionItem value="page" className="border-b-0">
                             <AccordionTrigger className="py-2 hover:no-underline text-xs uppercase tracking-wider text-muted-foreground font-semibold">

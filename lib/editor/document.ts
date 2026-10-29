@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
-import { BehaviorConfig, BehaviorType, EditorElement } from './store';
+import { isEffectId } from '@/lib/effect-library';
+import { BehaviorConfig, EditorElement } from './store';
 
 export interface EditorPage {
     id: string;
@@ -20,7 +21,6 @@ const MIN_CANVAS_HEIGHT = 800;
 const ESTIMATED_AUTO_HEIGHT = 100;
 
 const ELEMENT_TYPES = new Set<string>(['text', 'image', 'box']);
-const BEHAVIOR_TYPES = new Set<string>(['hydrodynamic', 'physics-card', 'apple-zoom']);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -36,9 +36,9 @@ function parseStyle(value: unknown): CSSProperties | null {
 
 function parseBehavior(value: unknown): BehaviorConfig | null {
     if (!isRecord(value)) return null;
-    if (typeof value.id !== 'string' || typeof value.type !== 'string' || !BEHAVIOR_TYPES.has(value.type)) return null;
+    if (typeof value.id !== 'string' || typeof value.type !== 'string' || !isEffectId(value.type)) return null;
     if (value.config !== undefined && !isRecord(value.config)) return null;
-    return { id: value.id, type: value.type as BehaviorType, config: value.config };
+    return { id: value.id, type: value.type, config: value.config };
 }
 
 function parseElement(value: unknown): EditorElement | null {

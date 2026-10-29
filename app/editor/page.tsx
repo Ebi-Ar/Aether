@@ -7,8 +7,10 @@ import { EditorLayout } from "@/components/editor/editor-layout";
 import { TopBar } from "@/components/editor/top-bar";
 import { LeftSidebar } from "@/components/editor/left-sidebar";
 import { RightSidebar } from "@/components/editor/right-sidebar";
-import { Canvas, CANVAS_GUTTER, CANVAS_VIEWPORT_ID, CANVAS_WIDTH } from "@/components/editor/canvas";
-import { initialElements, BehaviorType, EditorElement } from '@/lib/editor/store';
+import { Canvas } from "@/components/editor/canvas";
+import { CANVAS_GUTTER, CANVAS_VIEWPORT_ID, CANVAS_WIDTH } from "@/components/editor/canvas-constants";
+import { initialElements, EditorElement } from '@/lib/editor/store';
+import { EFFECTS, EffectTarget, isEffectId } from '@/lib/effect-library';
 import { createDefaultElement } from '@/lib/editor/defaults';
 import { computeCanvasHeight, DEFAULT_PAGES, EditorDocument, parseEditorDocument } from '@/lib/editor/document';
 import { useHistory } from '@/lib/editor/use-history';
@@ -22,6 +24,8 @@ const STORAGE_KEY = 'aether:editor:v1';
 // Timestamp-based so ids stay unique across reloads: a per-session counter
 // would collide with ids restored from the saved page.
 const createElementId = (subtype: string) => `${subtype}-${Date.now()}`;
+
+const TARGET_NAMES: Record<EffectTarget, string> = { text: 'text', image: 'images', box: 'boxes' };
 const FULL_WIDTH_SECTION_SUBTYPES = new Set([
     'navbar',
     'hero',
@@ -1368,25 +1372,29 @@ export default function EditorPage() {
         }
 
         // 1. Dropping a Behavior onto an Element
-        if (data.type === 'behavior' && over) {
-            const behaviorId = data.behaviorId; // e.g. 'hydrodynamic'
-            const targetElementId = over.id;
+        if (data.type === 'behavior') {
+            const effectId = String(data.behaviorId); // e.g. 'hydrodynamic'
+            const target = elements.find(el => el.id === over?.id);
+            const effect = isEffectId(effectId) ? EFFECTS[effectId] : null;
 
-            // Only apply behaviors to valid elements, not the canvas itself unless page-wide
-            // For now, assuming drops on specific elements
-            setElements(prev => prev.map(el => {
-                if (el.id === targetElementId) {
-                    const newBehaviorId = `b-${Date.now()}`;
-                    const newBehavior = {
-                        id: newBehaviorId,
-                        type: behaviorId as BehaviorType,
-                        config: {}
-                    };
-                    return { ...el, behaviors: [...el.behaviors, newBehavior] };
-                }
-                return el;
-            }));
-            toast({ description: `Applied ${behaviorId} to element` });
+            if (!effect) {
+                // Not an effect from lib/effect-library; nothing to apply.
+            } else if (!target) {
+                toast({ description: `Drop ${effect.name} onto an element on the page.` });
+            } else if (!effect.targets.includes(target.type)) {
+                const allowed = effect.targets.map(t => TARGET_NAMES[t]).join(' and ');
+                toast({ description: `${effect.name} only works on ${allowed}.` });
+            } else if (target.behaviors.some(b => b.type === effect.id)) {
+                toast({ description: `${target.name} already has ${effect.name}.` });
+            } else {
+                // Settings start empty, so every slider shows its default.
+                const newBehavior = { id: createElementId('b'), type: effect.id, config: {} };
+                setElements(prev => prev.map(el =>
+                    el.id === target.id ? { ...el, behaviors: [...el.behaviors, newBehavior] } : el
+                ));
+                setSelectedId(target.id);
+                toast({ description: `Added ${effect.name} to ${target.name}` });
+            }
         }
 
         // 2. Dropping a NEW Layout/Content item onto the Canvas

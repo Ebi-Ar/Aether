@@ -1,4 +1,7 @@
-export type BehaviorType = 'hydrodynamic' | 'physics-card' | 'apple-zoom';
+import type { EffectId } from '@/lib/effect-library';
+
+// An effect applied to an element; its id names an effect in lib/effect-library.
+export type BehaviorType = EffectId;
 
 export interface BehaviorConfig {
     id: string;

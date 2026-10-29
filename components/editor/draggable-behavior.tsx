@@ -5,9 +5,10 @@ import { Sparkles } from 'lucide-react';
 interface DraggableBehaviorItemProps {
     id: string;
     label: string;
+    description?: string;
 }
 
-export function DraggableBehaviorItem({ id, label }: DraggableBehaviorItemProps) {
+export function DraggableBehaviorItem({ id, label, description = 'Drag to apply' }: DraggableBehaviorItemProps) {
     const { attributes, listeners, setNodeRef, transform } = useDraggable({
         id: id,
         data: {
@@ -31,9 +32,9 @@ export function DraggableBehaviorItem({ id, label }: DraggableBehaviorItemProps)
             <div className="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center text-blue-400">
                 <Sparkles className="w-4 h-4" />
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0">
                 <span className="text-xs font-medium">{label}</span>
-                <span className="text-[10px] text-muted-foreground">Drag to apply</span>
+                <span className="text-[10px] text-muted-foreground">{description}</span>
             </div>
         </div>
     );

@@ -3,12 +3,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { useGSAP } from '@gsap/react';
 import { EditorElement } from '@/lib/editor/store';
 import { sanitizeHtml } from '@/lib/editor/sanitize';
-import { applyHydrodynamicBehavior, HydrodynamicConfig } from '@/lib/behaviors/hydrodynamic';
-import { applyPhysicsCardBehavior, PhysicsCardConfig } from '@/lib/behaviors/physics-card';
-import { applyAppleZoomBehavior } from '@/lib/behaviors/apple-zoom';
+import { EFFECTS, resolveSettings } from '@/lib/effect-library';
+import { CANVAS_VIEWPORT_ID } from './canvas-constants';
 
 interface CanvasElementProps {
     element: EditorElement;
@@ -74,38 +72,22 @@ export function CanvasElement({ element, onSelect, onUpdate, selected, readOnly,
         zIndex: isDragging ? 9999 : layeredZ,
     };
 
-    // Use @gsap/react hook for better React 18 compatibility and automatic cleanup
-    useGSAP(() => {
-        if (!elRef.current) return;
+    // Run the element's effects (lib/effect-library); re-run when they or the content change.
+    useEffect(() => {
+        const node = elRef.current;
+        if (!node) return;
 
-        const cleanups: (() => void)[] = [];
-
-        // Apply all behaviors in the array
-        element.behaviors.forEach(behavior => {
-            if (!elRef.current) return;
-
-            let cleanup: (() => void) | undefined;
-            const target = elRef.current as HTMLElement;
-
-            if (behavior.type === 'hydrodynamic') {
-                cleanup = applyHydrodynamicBehavior(target, behavior.config as Partial<HydrodynamicConfig>);
-            } else if (behavior.type === 'physics-card') {
-                cleanup = applyPhysicsCardBehavior(target, behavior.config as Partial<PhysicsCardConfig>);
-            } else if (behavior.type === 'apple-zoom') {
-                cleanup = applyAppleZoomBehavior(target);
-            }
-
-            if (cleanup) cleanups.push(cleanup);
+        const scrollContainer = node.closest<HTMLElement>(`#${CANVAS_VIEWPORT_ID}`) ?? undefined;
+        const cleanups = element.behaviors.map(behavior => {
+            const effect = EFFECTS[behavior.type];
+            return effect.apply(node, resolveSettings(effect, behavior.config), { scrollContainer });
         });
 
-        // Return aggregate cleanup function
         return () => {
-            cleanups.forEach(fn => fn());
+            // Undo in reverse so each effect sees the element as it left it.
+            cleanups.reverse().forEach(stop => stop());
         };
-    }, {
-        scope: elRef,
-        dependencies: [element.behaviors, element.content] // Re-run when behaviors or content change
-    });
+    }, [element.behaviors, element.content]);
 
     const safeContent = useMemo(() => sanitizeHtml(element.content), [element.content]);
     const [isEditing, setIsEditing] = useState(false);

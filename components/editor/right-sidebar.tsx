@@ -2,7 +2,9 @@ import React from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
-import { EditorElement } from '@/lib/editor/store';
+import { BehaviorConfig, EditorElement } from '@/lib/editor/store';
+import { EFFECTS, resolveSettings } from '@/lib/effect-library';
+import { toast } from '@/hooks/use-toast';
 
 interface RightSidebarProps {
     element?: EditorElement;
@@ -725,100 +727,22 @@ export function RightSidebar({ element, elements = [], onUpdate, onUpdateBehavio
 
                     <Separator className="bg-border/40" />
 
-                    {/* Behaviors Section */}
+                    {/* Effects applied to this element (lib/effect-library) */}
                     {behaviors.length > 0 && (
                         <>
-                            <PropertySection title="Behaviors">
-                                {behaviors.map((behavior) => {
-                                    const config = behavior.config || {};
-                                    return (
-                                        <div key={behavior.id} className="mb-4 last:mb-0 p-3 bg-muted/5 rounded-md border border-border/20">
-                                            <div className="flex items-center justify-between mb-3">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                                    <span className="text-xs font-semibold capitalize">{behavior.type.replace('-', ' ')}</span>
-                                                </div>
-                                                <button
-                                                    onClick={() => onRemoveBehavior?.(behavior.id)}
-                                                    className="text-[10px] text-red-500 hover:text-red-600 hover:bg-red-50 p-1 rounded transition-colors"
-                                                >
-                                                    Remove
-                                                </button>
-                                            </div>
-
-                                            {/* Dynamic Config Controls */}
-                                            {behavior.type === 'hydrodynamic' && (
-                                                <div className="space-y-4 pl-1">
-                                                    <div>
-                                                        <div className="flex items-center justify-between text-xs mb-1.5">
-                                                            <span className="text-muted-foreground text-[10px]">Viscosity</span>
-                                                            <span className="font-mono text-[10px]">{numberSetting(config.viscosity, 0.3)}</span>
-                                                        </div>
-                                                        <SliderControl
-                                                            value={numberSetting(config.viscosity, 0.3)}
-                                                            onChange={(val) => onUpdateBehavior?.(behavior.id, { viscosity: val })}
-                                                            min={0.1} max={1} step={0.1}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center justify-between text-xs mb-1.5">
-                                                            <span className="text-muted-foreground text-[10px]">Elasticity</span>
-                                                            <span className="font-mono text-[10px]">{numberSetting(config.elasticity, 0.2)}</span>
-                                                        </div>
-                                                        <SliderControl
-                                                            value={numberSetting(config.elasticity, 0.2)}
-                                                            onChange={(val) => onUpdateBehavior?.(behavior.id, { elasticity: val })}
-                                                            min={0} max={1} step={0.1}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center justify-between text-xs mb-1.5">
-                                                            <span className="text-muted-foreground text-[10px]">Radius</span>
-                                                            <span className="font-mono text-[10px]">{numberSetting(config.interactionRadius, 150)}</span>
-                                                        </div>
-                                                        <SliderControl
-                                                            value={numberSetting(config.interactionRadius, 150)}
-                                                            onChange={(val) => onUpdateBehavior?.(behavior.id, { interactionRadius: val })}
-                                                            min={50} max={500} step={10}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {behavior.type === 'physics-card' && (
-                                                <div className="space-y-4 pl-1">
-                                                    <div>
-                                                        <div className="flex items-center justify-between text-xs mb-1.5">
-                                                            <span className="text-muted-foreground text-[10px]">Force</span>
-                                                            <span className="font-mono text-[10px]">{numberSetting(config.hoverForce, 10)}</span>
-                                                        </div>
-                                                        <SliderControl
-                                                            value={numberSetting(config.hoverForce, 10)}
-                                                            onChange={(val) => onUpdateBehavior?.(behavior.id, { hoverForce: val })}
-                                                            min={1} max={50} step={1}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center justify-between text-xs mb-1.5">
-                                                            <span className="text-muted-foreground text-[10px]">Max Rotation</span>
-                                                            <span className="font-mono text-[10px]">{numberSetting(config.maxRotation, 5)}deg</span>
-                                                        </div>
-                                                        <SliderControl
-                                                            value={numberSetting(config.maxRotation, 5)}
-                                                            onChange={(val) => onUpdateBehavior?.(behavior.id, { maxRotation: val })}
-                                                            min={1} max={45} step={1}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                            <PropertySection title="Effects">
+                                {behaviors.map((behavior) => (
+                                    <EffectPanel
+                                        key={behavior.id}
+                                        behavior={behavior}
+                                        onUpdate={(updates) => onUpdateBehavior?.(behavior.id, updates)}
+                                        onRemove={() => onRemoveBehavior?.(behavior.id)}
+                                    />
+                                ))}
                             </PropertySection>
                             <Separator className="bg-border/40" />
                         </>
                     )}
-
 
                     <PropertySection title="Actions">
                         <button
@@ -829,9 +753,9 @@ export function RightSidebar({ element, elements = [], onUpdate, onUpdateBehavio
                         </button>
                     </PropertySection>
 
-                    <PropertySection title="Add Behavior">
+                    <PropertySection title="Add Effect">
                         <div className="p-4 border border-dashed border-border rounded-md text-xs text-center text-muted-foreground">
-                            Drag behavior from sidebar
+                            Drag an effect from the Effects tab onto this element
                         </div>
                     </PropertySection>
 
@@ -841,9 +765,78 @@ export function RightSidebar({ element, elements = [], onUpdate, onUpdateBehavio
     );
 }
 
-// Behavior settings are stored untyped; fall back to the default for anything that isn't a number.
-function numberSetting(value: unknown, fallback: number) {
-    return typeof value === 'number' ? value : fallback;
+// A slider value with as many decimals as its step, plus its unit.
+function formatSetting(value: number, step: number, unit = '') {
+    const decimals = step < 1 ? (String(step).split('.')[1]?.length ?? 0) : 0;
+    return `${value.toFixed(decimals)}${unit}`;
+}
+
+// One effect on the selected element: its sliders and its code for developers.
+function EffectPanel({ behavior, onUpdate, onRemove }: {
+    behavior: BehaviorConfig;
+    onUpdate?: (updates: Record<string, unknown>) => void;
+    onRemove?: () => void;
+}) {
+    const effect = EFFECTS[behavior.type];
+    const settings = resolveSettings(effect, behavior.config);
+
+    const copyCode = async (library: 'gsap' | 'motion') => {
+        const label = library === 'gsap' ? 'GSAP' : 'Motion';
+        try {
+            await navigator.clipboard.writeText(effect.code[library](settings));
+            toast({ title: `${label} code copied`, description: "Paste it into your site. Its first comment says which class to add." });
+        } catch {
+            toast({ description: `Couldn't copy the ${label} code.` });
+        }
+    };
+
+    return (
+        <div className="mb-4 last:mb-0 p-3 bg-muted/5 rounded-md border border-border/20">
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span className="text-xs font-semibold">{effect.name}</span>
+                </div>
+                <button
+                    onClick={onRemove}
+                    className="text-[10px] text-red-500 hover:text-red-600 hover:bg-red-50 p-1 rounded transition-colors"
+                >
+                    Remove
+                </button>
+            </div>
+
+            <div className="space-y-4 pl-1">
+                {effect.settings.map(setting => (
+                    <div key={setting.key}>
+                        <div className="flex items-center justify-between text-xs mb-1.5">
+                            <span className="text-muted-foreground text-[10px]">{setting.label}</span>
+                            <span className="font-mono text-[10px]">{formatSetting(settings[setting.key], setting.step, setting.unit)}</span>
+                        </div>
+                        <SliderControl
+                            value={settings[setting.key]}
+                            onChange={(val) => onUpdate?.({ [setting.key]: val })}
+                            min={setting.min} max={setting.max} step={setting.step}
+                        />
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                    onClick={() => copyCode('gsap')}
+                    className="py-1.5 rounded-sm border border-border/40 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                >
+                    Copy GSAP code
+                </button>
+                <button
+                    onClick={() => copyCode('motion')}
+                    className="py-1.5 rounded-sm border border-border/40 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                >
+                    Copy Motion code
+                </button>
+            </div>
+        </div>
+    );
 }
 
 function PropertySection({ title, children }: { title: string, children: React.ReactNode }) {
